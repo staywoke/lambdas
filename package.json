@@ -18,18 +18,19 @@
     "url": "https://github.com/staywoke/lambdas/issues"
   },
   "engines": {
-    "node": "^8.9.4"
+    "node": ">=6.0.0 <7.0.0"
   },
   "scripts": {
     "test": "npm run -s test:lint && npm run -s test:unit",
     "test:lint": "eslint --ext .js -f ./node_modules/eslint-friendly-formatter ./",
-    "test:unit": "export LAMBDA_TESTER_NODE_VERSION_CHECK=false && nyc --reporter=html --branches=80 --functions=80 --lines=80 --check-coverage mocha './{,!(node_modules)/**/}tests/*.test.js'",
+    "test:unit": "nyc --reporter=html --branches=80 --functions=80 --lines=80 --check-coverage mocha './{,!(node_modules)/**/}tests/*.test.js'",
     "test:coverage": "open coverage/index.html"
   },
   "dependencies": {
     "aws-sdk": "^2.213.1"
   },
   "devDependencies": {
+    "bluebird": "^3.5.1",
     "chai": "^4.1.2",
     "eslint": "^4.16.0",
     "eslint-friendly-formatter": "^3.0.0",

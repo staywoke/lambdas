@@ -4,20 +4,18 @@ var expect = require('chai').expect;
 var LambdaTester = require('lambda-tester');
 var proxyquire = require('proxyquire').noCallThru();
 var sinon = require('sinon');
+var Promise = require('bluebird');
 
+// eslint-disable-next-line no-console
 describe('index', function() {
   var AWSStub;
-  var request;
   var lambda;
   var mockUser;
 
   beforeEach(function() {
     mockUser = {
-      username: 'tester'
-    };
-
-    request = {
-      get: sinon.stub()
+      username: 'tester',
+      password: '123'
     };
 
     AWSStub = {
@@ -26,30 +24,34 @@ describe('index', function() {
       }),
       DynamoDB: {
         DocumentClient: sinon.stub().returns({
-          get: sinon.stub().returns({}),
-          query: sinon.stub(),
-          scan: sinon.stub()
+          get: sinon.stub().returns(function(){
+            return {
+              promise: function () {
+                return Promise.resolve({ id: 1337 });
+              }
+            };
+          })
         })
       }
     };
 
     lambda = proxyquire('../index', {
-      'request': request,
       'aws-sdk': AWSStub
     });
   });
 
   describe('.handler', function() {
-    it('successful invocation:', function() {
-      request.get.withArgs(sinon.match.any).yields(null, {statusCode: 200}, {name: 'Joe'});
-
+    it('successful invocation', function() {
       return LambdaTester(lambda.handler).event(mockUser).expectResult(function(result) {
-        expect(result.valid).to.be.true;
+        console.log('RESULT', result);
+        expect(result).to.be.true;
       });
     });
 
-    it('fail: when name is invalid:', function() {
-      return LambdaTester(lambda.handler).event(null).expectError(function(err) {
+    it('fail: when name is invalid', function() {
+      delete mockUser.username;
+      return LambdaTester(lambda.handler).event(mockUser).expectError(function(err) {
+        console.log('ERROR', err);
         expect(err.message).to.equal('unknown name');
       });
     });

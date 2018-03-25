@@ -40,14 +40,21 @@ function getOpenId(user, callback) {
  * @return {[type]}            [description]
  */
 function getUser(userId, callback) {
-  dynamodbDoc.get({
-    TableName: 'users',
-    Key: {
-      id: userId
-    }
-  }, function(err, data) {
-    return callback(err, data ? data.Item : null);
-  });
+  console.log('getUser', userId);
+  try {
+    dynamodbDoc.get({
+      TableName: 'users',
+      Key: {
+        id: userId
+      }
+    }, function(err, data) {
+      console.log('response', err, data);
+      return callback(err, data ? data.Item : null);
+    });
+  } catch (err) {
+    console.log('error', err);
+    return callback(err, null);
+  }
 }
 
 /**
@@ -163,14 +170,8 @@ function createLogin(login, callback) {
   dynamodbDoc.put(params, callback);
 }
 
-/**
- * [description]
- * @param  {[type]}   event    [description]
- * @param  {[type]}   context  [description]
- * @param  {Function} callback [description]
- * @return {[type]}            [description]
- */
-var handler = function(event, context, callback) {
+exports.handler = function(event, context, callback) {
+  console.log('handler', event.username, callback);
   getUser(event.username, function(err, user) {
     if (err) {
       return callback(err);
@@ -183,6 +184,10 @@ var handler = function(event, context, callback) {
     createUser(event, function(err, user) {
       if (err) {
         return callback(err);
+      }
+
+      if (!user) {
+        return callback(new Error('Failed to create user ' + event.username + '.'));
       }
 
       getOpenId(user, function(err) {
@@ -207,5 +212,3 @@ var handler = function(event, context, callback) {
     });
   });
 };
-
-exports.handler = handler;
