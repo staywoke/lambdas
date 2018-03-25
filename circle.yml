@@ -1,0 +1,13 @@
+machine:
+  node:
+    version: 6.9.1
+deployment:
+  production:
+    branch: master
+    owner: staywoke
+    commands:
+      - ./scripts/deploy-production.sh
+general:
+  branches:
+    only:
+      - master
