@@ -53,8 +53,8 @@ describe('register', function() {
 
   describe('.handler', function() {
     it('successfully create user', function() {
-      return LambdaTester(lambda.handler).event(mockUser).expectSucceed(function(result) {
-        expect(result).to.deep.equal(mockUser);
+      return LambdaTester(lambda.handler).event(mockUser).expectResult(function(result) {
+        expect(result).to.be.undefined;
       });
     });
 
@@ -63,42 +63,42 @@ describe('register', function() {
         Item: 123
       };
 
-      return LambdaTester(lambda.handler).event(mockUser).expectFail(function(err) {
+      return LambdaTester(lambda.handler).event(mockUser).expectError(function(err) {
         expect(err.message).to.equal('The Username ' + mockUser.username + ' is Unavailable.');
       });
     });
 
     it('fails when username is undefined', function() {
       delete mockUser.username;
-      return LambdaTester(lambda.handler).event(mockUser).expectFail(function(err) {
+      return LambdaTester(lambda.handler).event(mockUser).expectError(function(err) {
         expect(err.message).to.equal('Missing Required username');
       });
     });
 
     it('fails when password is undefined', function() {
       delete mockUser.password;
-      return LambdaTester(lambda.handler).event(mockUser).expectFail(function(err) {
+      return LambdaTester(lambda.handler).event(mockUser).expectError(function(err) {
         expect(err.message).to.equal('Missing Required password');
       });
     });
 
     it('fails when first_name is undefined', function() {
       delete mockUser.first_name;
-      return LambdaTester(lambda.handler).event(mockUser).expectFail(function(err) {
+      return LambdaTester(lambda.handler).event(mockUser).expectError(function(err) {
         expect(err.message).to.equal('Missing Required first_name');
       });
     });
 
     it('fails when last_name is undefined', function() {
       delete mockUser.last_name;
-      return LambdaTester(lambda.handler).event(mockUser).expectFail(function(err) {
+      return LambdaTester(lambda.handler).event(mockUser).expectError(function(err) {
         expect(err.message).to.equal('Missing Required last_name');
       });
     });
 
     it('fails when email is undefined', function() {
       delete mockUser.email;
-      return LambdaTester(lambda.handler).event(mockUser).expectFail(function(err) {
+      return LambdaTester(lambda.handler).event(mockUser).expectError(function(err) {
         expect(err.message).to.equal('Missing Required email');
       });
     });

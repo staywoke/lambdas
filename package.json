@@ -22,7 +22,7 @@
   },
   "scripts": {
     "test": "npm run -s test:lint && npm run -s test:unit",
-    "test:lint": "eslint --ext .js -f ./node_modules/eslint-friendly-formatter ./",
+    "test:lint": "eslint --ext .js -f ./node_modules/eslint-friendly-formatter ./src && echo '\n【ツ】CODE FORMAT PERFECTION !!!'",
     "test:unit": "nyc --reporter=html --branches=50 --functions=50 --lines=50 --check-coverage mocha './src/**/*.test.js'",
     "test:coverage": "open coverage/index.html"
   },
