@@ -211,11 +211,6 @@ exports.handler = function(event, context, callback) {
         return callback(err);
       }
 
-      if (!user) {
-        context.fail('Failed to create user ' + event.username + '.');
-        return callback(new Error('Failed to create user ' + event.username + '.'));
-      }
-
       getOpenId(user, function(err) {
         if (err) {
           context.fail(err);

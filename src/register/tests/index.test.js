@@ -7,11 +7,12 @@ var sinon = require('sinon');
 
 describe('register', function() {
   var AWSStub;
+  var doc;
   var lambda;
   var mockUser;
 
   var getDoc = function (data, callback) {
-    return callback(null, null);
+    return callback(null, doc);
   };
 
   var putDoc = function (data, callback) {
@@ -30,6 +31,8 @@ describe('register', function() {
       last_name: 'User',
       email: 'test@test.com'
     };
+
+    doc = null;
 
     AWSStub = {
       CognitoIdentity: sinon.stub().returns({
@@ -52,6 +55,16 @@ describe('register', function() {
     it('successfully create user', function() {
       return LambdaTester(lambda.handler).event(mockUser).expectSucceed(function(result) {
         expect(result).to.deep.equal(mockUser);
+      });
+    });
+
+    it('fails that user already exists', function() {
+      doc = {
+        Item: 123
+      };
+
+      return LambdaTester(lambda.handler).event(mockUser).expectFail(function(err) {
+        expect(err.message).to.equal('The Username ' + mockUser.username + ' is Unavailable.');
       });
     });
 
