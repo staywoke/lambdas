@@ -40,21 +40,18 @@ function getOpenId(user, callback) {
  * @return {[type]}            [description]
  */
 function getUser(userId, callback) {
-  console.log('getUser', userId);
-  try {
-    dynamodbDoc.get({
-      TableName: 'users',
-      Key: {
-        id: userId
-      }
-    }, function(err, data) {
-      console.log('response', err, data);
-      return callback(err, data ? data.Item : null);
-    });
-  } catch (err) {
-    console.log('error', err);
-    return callback(err, null);
-  }
+  dynamodbDoc.get({
+    TableName: 'users',
+    Key: {
+      id: userId
+    }
+  }, function(err, data) {
+    if (err) {
+      return callback(err);
+    }
+
+    return callback(null, data ? data.Item : null);
+  });
 }
 
 /**
@@ -96,9 +93,10 @@ function createUser(event, callback) {
 function computeHash(password, salt, callback) {
   var len = 64;
   var iterations = 4096;
+  var digest = 'sha1';
 
   if (arguments.length === 3) {
-    crypto.pbkdf2(password, salt, iterations, len, function(err, derivedKey) {
+    crypto.pbkdf2(password, salt, iterations, len, digest, function(err, derivedKey) {
       if (err) {
         return callback(err);
       }
@@ -113,7 +111,7 @@ function computeHash(password, salt, callback) {
         return callback(err);
       }
       salt = salt.toString('base64');
-      crypto.pbkdf2(password, salt, iterations, len, function(err, derivedKey) {
+      crypto.pbkdf2(password, salt, iterations, len, digest, function(err, derivedKey) {
         if (err) {
           return callback(err);
         }
@@ -171,40 +169,72 @@ function createLogin(login, callback) {
 }
 
 exports.handler = function(event, context, callback) {
-  console.log('handler', event.username, callback);
+  if (!event.username) {
+    context.fail('Missing Required username');
+    return callback(new Error('Missing Required username'));
+  }
+
+  if (!event.password) {
+    context.fail('Missing Required password');
+    return callback(new Error('Missing Required password'));
+  }
+
+  if (!event.first_name) {
+    context.fail('Missing Required first_name');
+    return callback(new Error('Missing Required first_name'));
+  }
+
+  if (!event.last_name) {
+    context.fail('Missing Required last_name');
+    return callback(new Error('Missing Required last_name'));
+  }
+
+  if (!event.email) {
+    context.fail('Missing Required email');
+    return callback(new Error('Missing Required email'));
+  }
+
   getUser(event.username, function(err, user) {
     if (err) {
+      context.fail(err);
       return callback(err);
     }
 
     if (user) {
+      context.fail('The Username ' + event.username + ' is Unavailable.');
       return callback(new Error('The Username ' + event.username + ' is Unavailable.'));
     }
 
     createUser(event, function(err, user) {
       if (err) {
+        context.fail(err);
         return callback(err);
       }
 
       if (!user) {
+        context.fail('Failed to create user ' + event.username + '.');
         return callback(new Error('Failed to create user ' + event.username + '.'));
       }
 
       getOpenId(user, function(err) {
         if (err) {
+          context.fail(err);
           return callback(err);
         }
 
         createPassword(user, event.password, function(err, login) {
           if (err) {
+            context.fail(err);
             return callback(err);
           }
 
           createLogin(login, function(err) {
             if (err) {
+              context.fail(err);
               return callback(err);
             }
 
+            context.done(null, event);
             return callback(null);
           });
         });

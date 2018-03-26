@@ -13,10 +13,27 @@ Example Usage
 
 **BASIC:**
 
-```js
-var register = require('./lambdas/register');
+```html
+<script src="https://sdk.amazonaws.com/js/aws-sdk-2.213.1.min.js"></script>
+<script>
+var lambda = new AWS.Lambda();
 
-// @TODO: Have Ayana flush this out with actual example that works
+var newUser = {
+  username: 'newuser',
+  password: 'abc123'
+};
+
+lambda.invoke({
+  FunctionName: 'register',
+  Payload: JSON.stringify(newUser)
+}, function (err, data) {
+  if (err) {
+    console.log(err, err.stack);
+  } else {
+    var output = JSON.parse(data.Payload);
+  }
+});
+</script>
 ```
 
 **BASIC RESPONSE:**

@@ -4,33 +4,41 @@ var expect = require('chai').expect;
 var LambdaTester = require('lambda-tester');
 var proxyquire = require('proxyquire').noCallThru();
 var sinon = require('sinon');
-var Promise = require('bluebird');
 
-// eslint-disable-next-line no-console
-describe('index', function() {
+describe('register', function() {
   var AWSStub;
   var lambda;
   var mockUser;
 
+  var getDoc = function (data, callback) {
+    return callback(null, null);
+  };
+
+  var putDoc = function (data, callback) {
+    return callback(null, data);
+  };
+
+  var getOpenId = function (data, callback) {
+    return callback(null, data);
+  };
+
   beforeEach(function() {
     mockUser = {
       username: 'tester',
-      password: '123'
+      password: '123',
+      first_name: 'Test',
+      last_name: 'User',
+      email: 'test@test.com'
     };
 
     AWSStub = {
       CognitoIdentity: sinon.stub().returns({
-        getOpenIdTokenForDeveloperIdentity: sinon.stub()
+        getOpenIdTokenForDeveloperIdentity: getOpenId
       }),
       DynamoDB: {
         DocumentClient: sinon.stub().returns({
-          get: sinon.stub().returns(function(){
-            return {
-              promise: function () {
-                return Promise.resolve({ id: 1337 });
-              }
-            };
-          })
+          get: getDoc,
+          put: putDoc
         })
       }
     };
@@ -41,18 +49,44 @@ describe('index', function() {
   });
 
   describe('.handler', function() {
-    it('successful invocation', function() {
-      return LambdaTester(lambda.handler).event(mockUser).expectResult(function(result) {
-        console.log('RESULT', result);
-        expect(result).to.be.true;
+    it('successfully create user', function() {
+      return LambdaTester(lambda.handler).event(mockUser).expectSucceed(function(result) {
+        expect(result).to.deep.equal(mockUser);
       });
     });
 
-    it('fail: when name is invalid', function() {
+    it('fails when username is undefined', function() {
       delete mockUser.username;
-      return LambdaTester(lambda.handler).event(mockUser).expectError(function(err) {
-        console.log('ERROR', err);
-        expect(err.message).to.equal('unknown name');
+      return LambdaTester(lambda.handler).event(mockUser).expectFail(function(err) {
+        expect(err.message).to.equal('Missing Required username');
+      });
+    });
+
+    it('fails when password is undefined', function() {
+      delete mockUser.password;
+      return LambdaTester(lambda.handler).event(mockUser).expectFail(function(err) {
+        expect(err.message).to.equal('Missing Required password');
+      });
+    });
+
+    it('fails when first_name is undefined', function() {
+      delete mockUser.first_name;
+      return LambdaTester(lambda.handler).event(mockUser).expectFail(function(err) {
+        expect(err.message).to.equal('Missing Required first_name');
+      });
+    });
+
+    it('fails when last_name is undefined', function() {
+      delete mockUser.last_name;
+      return LambdaTester(lambda.handler).event(mockUser).expectFail(function(err) {
+        expect(err.message).to.equal('Missing Required last_name');
+      });
+    });
+
+    it('fails when email is undefined', function() {
+      delete mockUser.email;
+      return LambdaTester(lambda.handler).event(mockUser).expectFail(function(err) {
+        expect(err.message).to.equal('Missing Required email');
       });
     });
   });
