@@ -6,24 +6,29 @@ var proxyquire = require('proxyquire').noCallThru();
 var sinon = require('sinon');
 
 describe('register', function() {
-  var AWSStub;
+  var AWS;
   var doc;
   var lambda;
   var mockUser;
 
+  // Mock Function for AWS.DynamoDB.DocumentClient.get()
   var getDoc = function (data, callback) {
     return callback(null, doc);
   };
 
-  var putDoc = function (data, callback) {
-    return callback(null, data);
-  };
-
+  // Mock Function for AWS.CognitoIdentity.getOpenIdTokenForDeveloperIdentity()
   var getOpenId = function (data, callback) {
     return callback(null, data);
   };
 
+  // Mock Function for AWS.DynamoDB.DocumentClient.put()
+  var putDoc = function (data, callback) {
+    return callback(null, data);
+  };
+
+  // Reset before each test
   beforeEach(function() {
+    // Create Sample Payload
     mockUser = {
       username: 'tester',
       password: '123',
@@ -32,9 +37,11 @@ describe('register', function() {
       email: 'test@test.com'
     };
 
+    // This is the document that is returned via `getDoc`
     doc = null;
 
-    AWSStub = {
+    // Mock AWS methods used in lambda
+    AWS = {
       CognitoIdentity: sinon.stub().returns({
         getOpenIdTokenForDeveloperIdentity: getOpenId
       }),
@@ -46,8 +53,9 @@ describe('register', function() {
       }
     };
 
+    // Load lambda function via require proxy so we can mock 'aws-sdk' using `AWS`
     lambda = proxyquire('../index', {
-      'aws-sdk': AWSStub
+      'aws-sdk': AWS
     });
   });
 
@@ -59,10 +67,7 @@ describe('register', function() {
     });
 
     it('fails that user already exists', function() {
-      doc = {
-        Item: 123
-      };
-
+      doc = { Item: 123 };
       return LambdaTester(lambda.handler).event(mockUser).expectError(function(err) {
         expect(err.message).to.equal('The Username ' + mockUser.username + ' is Unavailable.');
       });

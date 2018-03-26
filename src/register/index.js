@@ -5,16 +5,7 @@ var dynamodbDoc = new AWS.DynamoDB.DocumentClient();
 var crypto = require('crypto');
 var cognitoidentity = new AWS.CognitoIdentity();
 
-// @TODO: Flush out DocBlock
-
-/**
- * [getOpenId description]
- * @param  {[type]}   user     [description]
- * @param  {Function} callback [description]
- * @return {[type]}            [description]
- */
 function getOpenId(user, callback) {
-
   var params = {
     IdentityPoolId: 'us-east-1:b421c663-df47-43f7-8cd3-5f19c010e27e',
     Logins: {},
@@ -33,12 +24,6 @@ function getOpenId(user, callback) {
   });
 }
 
-/**
- * [getUser description]
- * @param  {[type]}   userId   [description]
- * @param  {Function} callback [description]
- * @return {[type]}            [description]
- */
 function getUser(userId, callback) {
   dynamodbDoc.get({
     TableName: 'users',
@@ -54,12 +39,6 @@ function getUser(userId, callback) {
   });
 }
 
-/**
- * [createUser description]
- * @param  {[type]}   event    [description]
- * @param  {Function} callback [description]
- * @return {[type]}            [description]
- */
 function createUser(event, callback) {
   var user = {
     id: event.username,
@@ -79,17 +58,9 @@ function createUser(event, callback) {
     }
 
     return callback(null, user);
-
   });
 }
 
-/**
- * [computeHash description]
- * @param  {[type]}   password [description]
- * @param  {[type]}   salt     [description]
- * @param  {Function} callback [description]
- * @return {[type]}            [description]
- */
 function computeHash(password, salt, callback) {
   var len = 64;
   var iterations = 4096;
@@ -103,7 +74,6 @@ function computeHash(password, salt, callback) {
 
       return callback(null, derivedKey.toString('base64'));
     });
-
   } else {
     callback = salt;
     crypto.randomBytes(len, function(err, salt) {
@@ -122,15 +92,7 @@ function computeHash(password, salt, callback) {
   }
 }
 
-/**
- * [createPassword description]
- * @param  {[type]}   user     [description]
- * @param  {[type]}   password [description]
- * @param  {Function} callback [description]
- * @return {[type]}            [description]
- */
 function createPassword(user, password, callback) {
-
   var now = new Date().toISOString();
 
   var login = {
@@ -152,14 +114,7 @@ function createPassword(user, password, callback) {
   });
 }
 
-/**
- * [createLogin description]
- * @param  {[type]}   login    [description]
- * @param  {Function} callback [description]
- * @return {[type]}            [description]
- */
 function createLogin(login, callback) {
-
   var params = {
     TableName: 'auth',
     Item: login
