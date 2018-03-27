@@ -22,6 +22,7 @@ Developer Resources
 * [AWS Lambda Overview](https://aws.amazon.com/lambda/)
 * [Writing Lambda Unit Tests](https://github.com/vandium-io/lambda-tester/tree/master/docs)
 * [Mocha Unit Test Assertions](https://mochajs.org/#assertions)
+* [Node Version Manager](https://github.com/creationix/nvm#zsh)
 
 **NPM Scripts:**
 

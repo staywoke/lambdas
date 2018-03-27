@@ -1,0 +1,25 @@
+{
+  "name": "staywoke-lamda-register",
+  "version": "1.0.0",
+  "author": "StayWoke.org",
+  "description": "StayWoke.org AWS Lambda Register Component",
+  "keywords": [
+    "StayWoke",
+    "AWS",
+    "Lambda",
+    "Component",
+    "Register"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/staywoke/lambdas.git"
+  },
+  "bugs": {
+    "url": "https://github.com/staywoke/lambdas/issues"
+  },
+  "engines": {
+    "node": ">=6.0.0 <7.0.0"
+  },
+  "main": "index.js"
+}
