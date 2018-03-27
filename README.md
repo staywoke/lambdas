@@ -26,9 +26,12 @@ Developer Resources
 
 **NPM Scripts:**
 
-Command                 | Description
-------------------------|-------------
-`npm test`              | Runs `npm run lint` and `npm run unit`
-`npm run test:lint`     | Checks that code formatting meets standards requirements
-`npm run test:unit`     | Runs Unit Tests for each component and builds Code Coverage report
-`npm run test:coverage` | Opens Code Coverage in Browser
+Command                             | Description
+------------------------------------|-------------
+`npm test`                          | Runs `npm run lint` and `npm run unit`
+`npm run test:lint`                 | Checks that code formatting meets standards requirements
+`npm run test:unit`                 | Runs Unit Tests for each component and builds Code Coverage report
+`npm run test:coverage`             | Opens Code Coverage in Browser
+`npm run deploy:production`         | Runs `npm run deploy:production:package` and `npm run deploy:production:release`
+`npm run deploy:production:package` | Prepares and Packages Lambdas for Deployment to Production
+`npm run deploy:production:release` | Deploys Packaged Lambdas to Production
