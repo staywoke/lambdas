@@ -1,1 +1,1 @@
-console.log('@TODO: Connect Release Script with Circle CI\n');
+console.log('\n@TODO: Connect Release Script with Circle CI\n');

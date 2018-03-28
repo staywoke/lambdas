@@ -29,9 +29,9 @@ var cmd = os.platform().startsWith('win') ? 'npm.cmd' : 'npm';
 function checkLambda (lambdaPath, name) {
   return new Promise(function(resolve, reject) {
     if (!fs.existsSync(join(lambdaPath, 'package.json'))) {
-      reject(`× ERROR: '${name}' missing package.json`);
+      return reject(colors.bold.red(`\n× ERROR: '${name}' missing package.json\n`));
     } else {
-      resolve(`\n Packaging '${name}' lambda ... \n`);
+      return resolve(colors.bgWhite.black(`\n Packaging '${name}' lambda ... \n`));
     }
   });
 }
@@ -53,7 +53,7 @@ function cleanLambda (nodeModulesPath, zipPath, name) {
     rimraf(nodeModulesPath, function(){
       completed.nodeModules = true;
       if (completed.nodeModules && completed.zip) {
-        resolve(`✓ '${name}' clean up complete`);
+        return resolve(colors.bold.green(`✓ '${name}' clean up complete`));
       }
     });
 
@@ -61,7 +61,7 @@ function cleanLambda (nodeModulesPath, zipPath, name) {
     rimraf(zipPath, function(){
       completed.zip = true;
       if (completed.nodeModules && completed.zip) {
-        resolve(`✓ '${name}' cleanup complete`);
+        return resolve(colors.bold.green(`✓ '${name}' cleanup complete`));
       }
     });
   });
@@ -74,18 +74,35 @@ function cleanLambda (nodeModulesPath, zipPath, name) {
  */
 function installDeps (lambdaPath, name) {
   return new Promise(function(resolve, reject) {
+
     // Run `npm install` within lambda folder
-    var install = cp.spawn(cmd, ['i'], { env: process.env, cwd: lambdaPath, stdio: null });
+    var install = cp.spawn('npm', ['install'], { env: process.env, cwd: lambdaPath });
+
+    install.stdout.on('data', (error) => {
+      return reject(colors.bold.red(`\n× killed: installing '${name}' package.json > ${error}\n`));
+    });
+
+    install.stderr.on('data', (error) => {
+      return reject(colors.bold.red(`\n× killed: installing '${name}' package.json > ${error}\n`));
+    });
+
+    install.on('error', (error) => {
+      return reject(colors.bold.red(`\n× killed: installing '${name}' package.json > ${error}\n`));
+    });
 
     // Listen for completion of `npm install`
-    install.on('close', (code) => {
-      resolve(`✓ '${name}' dependencies installed`);
+    install.on('close', (code, data) => {
+      if (code === 0) {
+        return resolve(colors.bold.green(`✓ '${name}' dependencies installed`));
+      } else {
+        return reject(colors.bold.red(`\n× ERROR: '${name}' dependencies could not be installed\n  CHECK: cd ./src/${name}/ && npm install\n`));
+      }
     });
   });
 }
 
 /**
- * [packageLambda description]
+ * Zip Lambda
  * @param  {String} lambdaPath Absolute Path to Lambda Folder
  * @param  {String} zipPath Absolute Path to existing ZIP file
  * @param  {String} name Name of Lambda Function
@@ -96,12 +113,15 @@ function packageLambda (lambdaPath, zipPath, name) {
     zip.addLocalFolder(lambdaPath, '');
     zip.writeZip(zipPath);
 
-    resolve(`✓ ./dist/${name}.zip created`);
+    return resolve(colors.bold.green(`✓ ./dist/${name}.zip created`));
   });
 }
 
+// Story order we want to run Promises in
+var promises = [];
+
 // Loop through lambda's
-fs.readdirSync(src).forEach(function (lambda) {
+fs.readdirSync(src).map(function (lambda) {
   var lambdaPath = join(src, lambda);
   var zipPath = join(dist, `${lambda}.zip`);
   var nodeModulesPath = join(lambdaPath, 'node_modules');
@@ -111,19 +131,18 @@ fs.readdirSync(src).forEach(function (lambda) {
     return;
   }
 
-  // Run commands in specefic order using Promises
-  checkLambda(lambdaPath, lambda).then(function(checkLambdaResponse){
-    cleanLambda(nodeModulesPath, zipPath, lambda).then(function(cleanLambdaResponse){
-      installDeps(lambdaPath, lambda).then(function(installDepsResponse){
-        packageLambda(lambdaPath, zipPath, lambda).then(function(packageLambdaResponse){
-          console.log(`${checkLambdaResponse}`.bgWhite.black);
-          console.log(`${cleanLambdaResponse}`.bold.green);
-          console.log(`${installDepsResponse}`.bold.green);
-          console.log(`${packageLambdaResponse}\n`.bold.green);
-        });
-      });
-    });
-  }).catch(function(error){
-    console.log(`\n${error}`.bold.red);
+  promises.push(checkLambda(lambdaPath, lambda));
+  promises.push(cleanLambda(nodeModulesPath, zipPath, lambda));
+  promises.push(installDeps(lambdaPath, lambda));
+  promises.push(packageLambda(lambdaPath, zipPath, lambda));
+})
+
+// Run commands in specefic order they were requested
+Promise.all(promises).then(values => {
+  values.map(function (response) {
+    console.log(response);
   });
 })
+.catch(function(error){
+  console.error(error);
+});
