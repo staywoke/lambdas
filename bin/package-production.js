@@ -30,7 +30,7 @@ function checkLambda (lambdaPath, name) {
     if (!fs.existsSync(join(lambdaPath, 'package.json'))) {
       return Promise.reject(`× ERROR: '${name}' missing package.json`);
     }
-    return Promise.resolve(`Packaging '${name}' lambda ... \n`);
+    return Promise.resolve(`\n Packaging '${name}' lambda ... \n`);
 }
 
 /**
@@ -44,7 +44,7 @@ function cleanLambda (nodeModulesPath, zipPath, name) {
   return new Promise(function(resolve, reject) {
     rimraf(nodeModulesPath, function(){
         rimraf(zipPath, function(){
-          resolve(`✓ '${name}' clean up complete`); 
+          resolve(`✓ '${name}' clean up complete`);
       });
     });
   });
@@ -68,7 +68,7 @@ function installDeps (lambdaPath, name) {
 }
 
 /**
- * [packageLambda description]
+ * Zip Lambda's for uploading later to AWS S3
  * @param  {String} lambdaPath Absolute Path to Lambda Folder
  * @param  {String} zipPath Absolute Path to existing ZIP file
  * @param  {String} name Name of Lambda Function
@@ -112,6 +112,3 @@ Promise.mapSeries(fs.readdirSync(src), function (lambda) {
       console.log(`${packageLambdaResponse}\n`.bold.green);
   });
 });
-
-
-
