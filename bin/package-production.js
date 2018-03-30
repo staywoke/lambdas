@@ -27,13 +27,10 @@ var cmd = os.platform().startsWith('win') ? 'npm.cmd' : 'npm';
  * @param  {String} name Name of Lambda Function
  */
 function checkLambda (lambdaPath, name) {
-  return new Promise(function(resolve, reject) {
     if (!fs.existsSync(join(lambdaPath, 'package.json'))) {
-      reject(`× ERROR: '${name}' missing package.json`);
-    } else {
-      resolve(`\n Packaging '${name}' lambda ... \n`);
+      return Promise.reject(`× ERROR: '${name}' missing package.json`);
     }
-  });
+    return Promise.resolve(`Packaging '${name}' lambda ... \n`);
 }
 
 /**
@@ -42,27 +39,13 @@ function checkLambda (lambdaPath, name) {
  * @param  {String} zipPath Absolute Path to existing ZIP file
  * @param  {String} name Name of Lambda Function
  */
+
 function cleanLambda (nodeModulesPath, zipPath, name) {
   return new Promise(function(resolve, reject) {
-    var completed = {
-      nodeModules: false,
-      zip: false
-    };
-
-    // Remove lambda's node_modules directory so we get a clean install each time
     rimraf(nodeModulesPath, function(){
-      completed.nodeModules = true;
-      if (completed.nodeModules && completed.zip) {
-        resolve(`✓ '${name}' clean up complete`);
-      }
-    });
-
-    // Remove previous build
-    rimraf(zipPath, function(){
-      completed.zip = true;
-      if (completed.nodeModules && completed.zip) {
-        resolve(`✓ '${name}' cleanup complete`);
-      }
+        rimraf(zipPath, function(){
+          resolve(`✓ '${name}' clean up complete`); 
+      });
     });
   });
 }
@@ -101,29 +84,34 @@ function packageLambda (lambdaPath, zipPath, name) {
 }
 
 // Loop through lambda's
-fs.readdirSync(src).forEach(function (lambda) {
+Promise.mapSeries(fs.readdirSync(src), function (lambda) {
   var lambdaPath = join(src, lambda);
   var zipPath = join(dist, `${lambda}.zip`);
   var nodeModulesPath = join(lambdaPath, 'node_modules');
 
   // Skip if this is not a directory
   if (!fs.lstatSync(lambdaPath).isDirectory()) {
-    return;
+    return Promise.resolve();
   }
 
   // Run commands in specefic order using Promises
-  checkLambda(lambdaPath, lambda).then(function(checkLambdaResponse){
-    cleanLambda(nodeModulesPath, zipPath, lambda).then(function(cleanLambdaResponse){
-      installDeps(lambdaPath, lambda).then(function(installDepsResponse){
-        packageLambda(lambdaPath, zipPath, lambda).then(function(packageLambdaResponse){
-          console.log(`${checkLambdaResponse}`.bgWhite.black);
-          console.log(`${cleanLambdaResponse}`.bold.green);
-          console.log(`${installDepsResponse}`.bold.green);
-          console.log(`${packageLambdaResponse}\n`.bold.green);
-        });
-      });
-    });
-  }).catch(function(error){
-    console.log(`\n${error}`.bold.red);
+  return checkLambda(lambdaPath, lambda)
+  .then(function(checkLambdaResponse){
+    console.log(`${checkLambdaResponse}`.bgWhite.black);
+    return cleanLambda(nodeModulesPath, zipPath, lambda);
+  })
+  .then(function(cleanLambdaResponse){
+    console.log(`${cleanLambdaResponse}`.bold.green);
+    return installDeps(lambdaPath, lambda);
+  })
+  .then(function(installDepsResponse){
+    console.log(`${installDepsResponse}`.bold.green);
+    return packageLambda(lambdaPath, zipPath, lambda);
+  })
+  .then(function(packageLambdaResponse){
+      console.log(`${packageLambdaResponse}\n`.bold.green);
   });
-})
+});
+
+
+
