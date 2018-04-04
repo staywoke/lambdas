@@ -4,6 +4,7 @@ var AWS = require('aws-sdk');
 var dynamodbDoc = new AWS.DynamoDB.DocumentClient();
 var crypto = require('crypto');
 var cognitoidentity = new AWS.CognitoIdentity();
+var Auth = require('../auth.js'); 
 
 function getOpenId(user, callback) {
   var params = {
@@ -24,20 +25,6 @@ function getOpenId(user, callback) {
   });
 }
 
-function getUser(userId, callback) {
-  dynamodbDoc.get({
-    TableName: 'users',
-    Key: {
-      id: userId
-    }
-  }, function(err, data) {
-    if (err) {
-      return callback(err);
-    }
-
-    return callback(null, data ? data.Item : null);
-  });
-}
 
 function createUser(event, callback) {
   var user = {
@@ -61,37 +48,6 @@ function createUser(event, callback) {
   });
 }
 
-function computeHash(password, salt, callback) {
-  var len = 64;
-  var iterations = 4096;
-  var digest = 'sha1';
-
-  if (arguments.length === 3) {
-    crypto.pbkdf2(password, salt, iterations, len, digest, function(err, derivedKey) {
-      if (err) {
-        return callback(err);
-      }
-
-      return callback(null, derivedKey.toString('base64'));
-    });
-  } else {
-    callback = salt;
-    crypto.randomBytes(len, function(err, salt) {
-      if (err) {
-        return callback(err);
-      }
-      salt = salt.toString('base64');
-      crypto.pbkdf2(password, salt, iterations, len, digest, function(err, derivedKey) {
-        if (err) {
-          return callback(err);
-        }
-
-        return callback(null, salt, derivedKey.toString('base64'));
-      });
-    });
-  }
-}
-
 function createPassword(user, password, callback) {
   var now = new Date().toISOString();
 
@@ -101,16 +57,24 @@ function createPassword(user, password, callback) {
     userId: user.id
   };
 
-  computeHash(password, function(err, salt, hash) {
+  crypto.randomBytes(len, function(err, salt) {
     if (err) {
-      return callback('Error in hash: ' + err);
+      return callback(err);
     }
+    salt = salt.toString('base64');
 
-    login.passwordHash = hash;
-    login.passwordSalt = salt;
-    login.updatedDate = now;
+    Auth.computeHash(password, salt, function(err, salt, hash) {
+      if (err) {
+        return callback('Error in hash: ' + err);
+      }
 
-    callback(null, login);
+      login.passwordHash = hash;
+      login.passwordSalt = salt;
+      login.updatedDate = now;
+
+      callback(null, login);
+    
+    });
   });
 }
 
@@ -144,7 +108,7 @@ exports.handler = function(event, context, callback) {
     return callback(new Error('Missing Required email'));
   }
 
-  getUser(event.username, function(err, user) {
+  Auth.getUser(event.username, function(err, user) {
     if (err) {
       return callback(err);
     }
