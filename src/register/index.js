@@ -50,7 +50,7 @@ function createUser(event, callback) {
 
 function createPassword(user, password, callback) {
   var now = new Date().toISOString();
-
+  var len = 64; 
   var login = {
     id: user.identityId,
     identityId: user.identityId,
