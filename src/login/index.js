@@ -25,7 +25,7 @@ var getToken = function(login, callback) {
         
         login.token = data.Token;
         
-        return callback(null);
+        return callback(null, login);
     });
 };
 
@@ -101,9 +101,8 @@ function updateUser(user, event, callback) {
     user.lastLoginDate = now;
 
     var params = {
-        TableName: 'system',
+        TableName: 'users',
         Key: {
-            docType: 'user',
             id: user.id
         },
         UpdateExpression: 'set lastLoginDate = :lastLogin',
