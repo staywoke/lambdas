@@ -4,7 +4,7 @@ var AWS = require('aws-sdk');
 var dynamodbDoc = new AWS.DynamoDB.DocumentClient();
 var crypto = require('crypto');
 var cognitoidentity = new AWS.CognitoIdentity();
-var Auth = require('../auth.js'); 
+var Auth = require('./auth.js'); 
 
 function getOpenId(user, callback) {
   var params = {
@@ -33,7 +33,8 @@ function createUser(event, callback) {
     last_name: event.last_name,
     email: event.email,
     created: new Date().toString(),
-    updated: new Date().toString()
+    updated: new Date().toString(), 
+    identityId: event.identityId
   };
 
   dynamodbDoc.put({
@@ -63,7 +64,7 @@ function createPassword(user, password, callback) {
     }
     salt = salt.toString('base64');
 
-    Auth.computeHash(password, salt, function(err, salt, hash) {
+    Auth.computeHash(password, salt, function(err, hash) {
       if (err) {
         return callback('Error in hash: ' + err);
       }
@@ -96,6 +97,11 @@ exports.handler = function(event, context, callback) {
     return callback(new Error('Missing Required password'));
   }
 
+  // // add stricter
+  if (event.password.length < 8){
+    return callback(new Error('Password is too short'));
+  }
+
   if (!event.first_name) {
     return callback(new Error('Missing Required first_name'));
   }
@@ -117,12 +123,14 @@ exports.handler = function(event, context, callback) {
       return callback(new Error('The Username ' + event.username + ' is Unavailable.'));
     }
 
-    createUser(event, function(err, user) {
+    event.id = event.username;
+        
+    getOpenId(event, function(err) {
       if (err) {
         return callback(err);
       }
 
-      getOpenId(user, function(err) {
+      createUser(event, function(err, user) {
         if (err) {
           return callback(err);
         }
@@ -137,7 +145,7 @@ exports.handler = function(event, context, callback) {
               return callback(err);
             }
 
-            return callback(null);
+            return callback(null, {success: true});
           });
         });
       });

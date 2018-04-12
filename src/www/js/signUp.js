@@ -58,7 +58,7 @@ var signup = function() {
     
       var output = JSON.parse(data.Payload);
       if (output && output.success) {
-        result.innerHTML = 'User ' + user.email + ' created. Please check your email to validate the user and enable login.';
+        result.innerHTML = 'User with username ' + user.username + ' was created.';
         return;
       }
       
